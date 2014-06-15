@@ -10,7 +10,7 @@ window.onload = function(){
 	canvas.height = H;
 	
 	//Some variables
-	var length, divergence, reduction, lineWidth, start_points = [];
+	var length, divergence, reduction, lineWidth, branchings, start_points = [];
 	
 	init();
 	
@@ -30,6 +30,8 @@ window.onload = function(){
 		reduction = Math.round(50 + Math.random()*20)/100;
 		//width of the branch/trunk
 		lineWidth = 10;
+		//number of branchings
+		branchings = 0;
 		
 		//This is the end point of the trunk, from where branches will diverge
 		var trunk = {x: W/2, y: length + 50, angle: 90};
@@ -50,7 +52,9 @@ window.onload = function(){
 	}
 	
 	//Lets draw the branches now
-	function branches() {
+	function branches(callNum) {
+		callNum = callNum || 0;
+
 		//reducing lineWidth and length
 		length = length * reduction;
 		lineWidth = lineWidth * reduction;
@@ -88,10 +92,10 @@ window.onload = function(){
 		start_points = new_start_points;
 		//recursive call - only if length is more than 2.
 		//Else it will fall in an long loop
-		if (length > 2) {
-			//setTimeout(branches, 50);
-		} else {
-			//setTimeout(init, 500);
+		if (callNum < branchings) {
+			setTimeout(function(){
+				branches(callNum+1);
+			}, 50);
 		}
 	}
 	
