@@ -68,26 +68,30 @@ var Tree = function(parent, canvas) {
 		if (typeof attribute.max !== "undefined") {
 			newValue = newValue > attribute.max ? attribute.max : newValue;
 		}
+		if (attribute.round) {
+			newValue = Math.round(newValue);
+		}
+
 		self.attributes[attributeToRandomize] = newValue;
 		render();
 	}
 
 	this.spawn = function() {
-		self.canvas = document.getElementById("root");
-		render(true);
-
-		var childCanvases = document.querySelectorAll(".child");
+		var childCanvases = document.querySelectorAll(".tree");
 		var tree;
 		self.chidren = [];
 		for (var i = 0; i < childCanvases.length; i++) {
-			tree = new Tree(self, childCanvases[i])
+			if (childCanvases[i] === self.canvas) {
+				continue;
+			}
+			tree = new Tree(self, childCanvases[i]);
 			self.chidren.push(tree);
 			tree.randomize();
 		}
 	}
 	
-	function render(isNew) {
-		if (!self.treeView || isNew) {
+	function render() {
+		if (!self.treeView) {
 			self.treeView = new TreeView(self);
 		}
 		self.treeView.draw();
@@ -110,6 +114,8 @@ var TreeView = function(tree) {
 	var length, divergence, reduction, lineWidth, branchings, start_points = [];
 	
 	this.draw = function() {
+		console.log(tree.attributes);
+
 		//filling the canvas white
 		ctx.fillStyle = "white";
 		ctx.fillRect(0, 0, W, H);
@@ -209,16 +215,6 @@ var TreeView = function(tree) {
 
 var root = new Tree();
 
-function run() {
-	root.randomize();
-}
-
-run();
-
-var button = document.getElementById("randomize");
-button.addEventListener("click", function() {
-	run();
-});
 
 
 
