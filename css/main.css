@@ -303,13 +303,18 @@ textarea {
 	}
 }
 
-#root {
-	width: 30px;
-	height: 30px;
-	border: 1px solid red;
+#trees {
+	width: 700px;
+	height: 700px;
+	margin: 0 auto;
 }
-
-/*To remove the scrollers*/
-#canvas {
+.tree {
 	display: block;
+	width: 200px;
+	height: 200px;
+	border-radius: 5px;
+	border: 1px solid black;
+	float: left;
+	margin-right: 10px;
+	margin-bottom: 10px;
 }

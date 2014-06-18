@@ -8,14 +8,14 @@ function greaterThanZero(obj, property) {
 	obj[property] = (obj[property] > 0 ? obj[property] : 0);
 }
 
-var Tree = function(parent) {
+var Tree = function(parent, canvas) {
 	var self = this;
 	var attributes = {
 		length: {
-			initialValue: 125,
+			initialValue: 65,
 			varyBy: 10,
-			min: 100,
-			max: 150
+			min: 25,
+			max: 100
 		},
 		divergence: {
 			initialValue: 35,
@@ -30,7 +30,7 @@ var Tree = function(parent) {
 			max: 0.75
 		},
 		lineWidth: {
-			initialValue: 10,
+			initialValue: 6,
 			varyBy: 0
 		},
 		branchings: {
@@ -42,6 +42,10 @@ var Tree = function(parent) {
 		}
 	};
 	var attributesArray = [];
+
+	if (canvas) {
+		self.canvas = canvas;
+	}
 
 	this.parent = parent || null;
 	parent = parent || {attributes:{}};
@@ -67,24 +71,38 @@ var Tree = function(parent) {
 		self.attributes[attributeToRandomize] = newValue;
 		render();
 	}
+
+	this.spawn = function() {
+		self.canvas = document.getElementById("root");
+		render(true);
+
+		var childCanvases = document.querySelectorAll(".child");
+		var tree;
+		self.chidren = [];
+		for (var i = 0; i < childCanvases.length; i++) {
+			tree = new Tree(self, childCanvases[i])
+			self.chidren.push(tree);
+			tree.randomize();
+		}
+	}
 	
-	this.randomize();
-	
-	function render() {
-		console.log(self.attributes);
-		if (!self.treeView) {
+	function render(isNew) {
+		if (!self.treeView || isNew) {
 			self.treeView = new TreeView(self);
 		}
 		self.treeView.draw();
 	}
+
+	this.randomize();
 };
 
+/* Adapted from http://thecodeplayer.com/walkthrough/create-binary-trees-using-javascript-and-html5-canvas?s=rl */
 var TreeView = function(tree) {
-	this.canvas = document.getElementById("canvas");
+	this.canvas = tree.canvas || document.getElementById("root");
 	var ctx = this.canvas.getContext("2d");
 	//Lets resize the canvas to occupy the full page
-	var W = window.innerWidth;
-	var H = window.innerHeight;
+	var W = this.canvas.offsetWidth;
+	var H = this.canvas.offsetHeight;
 	this.canvas.width = W;
 	this.canvas.height = H;
 
@@ -110,7 +128,7 @@ var TreeView = function(tree) {
 		branchings ? branchings < 0 : 0;
 
 		//This is the end point of the trunk, from where branches will diverge
-		var trunk = {x: W/2, y: length + 50, angle: 90};
+		var trunk = {x: W/2, y: length + 5, angle: 90};
 		//It becomes the start point for branches
 		start_points = []; //empty the start points on every init();
 		start_points.push(trunk);
@@ -118,7 +136,7 @@ var TreeView = function(tree) {
 		//Y coordinates go positive downwards, hence they are inverted by deducting it
 		//from the canvas height = H
 		ctx.beginPath();
-		ctx.moveTo(trunk.x, H - 50);
+		ctx.moveTo(trunk.x, H - 5);
 		ctx.lineTo(trunk.x, H - trunk.y);
 		ctx.strokeStyle = "brown";
 		ctx.lineWidth = lineWidth;
@@ -183,6 +201,10 @@ var TreeView = function(tree) {
 		var epy = y + length * Math.sin(a * Math.PI/180);
 		return {x: epx, y: epy};
 	}
+
+	this.canvas.addEventListener("click", function() {
+		tree.spawn();		
+	});
 }
 
 var root = new Tree();
@@ -194,9 +216,9 @@ function run() {
 run();
 
 var button = document.getElementById("randomize");
-button.addEventListener("click", function(){
+button.addEventListener("click", function() {
 	run();
-})
+});
 
 
 
