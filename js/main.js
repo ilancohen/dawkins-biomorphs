@@ -1,14 +1,30 @@
-function random(start, end) {
-	var range = end - start;
-	var randomNumber = Math.random() * range + start;
-	return randomNumber;
-}
+var Utilities = {
+	random: function(start, end) {
+		var range = end - start;
+		var randomNumber = Math.random() * range + start;
+		return randomNumber;
+	},
 
-function greaterThanZero(obj, property) {
-	obj[property] = (obj[property] > 0 ? obj[property] : 0);
-}
+	minMax: function(value, min, max) {
+		if (typeof min !== "undefined") {
+			value = value < min ? min : value;
+		}
+		if (typeof max !== "undefined") {
+			value = value > max ? max : value;
+		}
+		return value;
+	},
 
-var Tree = function(parent, canvas) {
+	copyObject: function(originalObject) {
+		return JSON.parse(JSON.stringify(originalObject));
+	}
+};
+
+var CONSTS = {
+	TREE_COUNT: 9
+};
+
+var TreeModel = function(parent) {
 	var self = this;
 	var attributes = {
 		length: {
@@ -43,66 +59,49 @@ var Tree = function(parent, canvas) {
 	};
 	var attributesArray = [];
 
-	if (canvas) {
-		self.canvas = canvas;
-	}
-
-	this.parent = parent || null;
 	parent = parent || {attributes:{}};
 
 	this.attributes = {};
-	for (var attributeName in attributes) {
-		attributesArray.push(attributeName);
-		this.attributes[attributeName] = parent.attributes[attributeName] || attributes[attributeName].initialValue
-	}
+
+	// Takes an optional parent - to allow for re-initialization.
+	this.initialize = function(parentTree) {
+		parent = parentTree || parent;
+		for (var attributeName in attributes) {
+			attributesArray.push(attributeName);
+			self.attributes[attributeName] = parent.attributes[attributeName] || attributes[attributeName].initialValue
+		}
+		self.randomize();
+	};
 	
 	this.randomize = function() {
+		// Selecting a random attribute
 		var attributeToRandomize = attributesArray[Math.floor(Math.random()*attributesArray.length)];
 		var attribute = attributes[attributeToRandomize];
 		var varyBy = attribute.varyBy;
-		var newValue = self.attributes[attributeToRandomize] + random(-1*varyBy, varyBy);
 
-		if (typeof attribute.min !== "undefined") {
-			newValue = newValue < attribute.min ? attribute.min : newValue;
-		}
-		if (typeof attribute.max !== "undefined") {
-			newValue = newValue > attribute.max ? attribute.max : newValue;
-		}
+		// Adding/subtracting a random amount from that attribute
+		var newValue = self.attributes[attributeToRandomize] + Utilities.random(-1*varyBy, varyBy);
+
+		// Ensuring that the value is within the bounds, and properly rounded.
+		newValue = Utilities.minMax(newValue, attribute.min, attribute.max);
 		if (attribute.round) {
 			newValue = Math.round(newValue);
 		}
 
 		self.attributes[attributeToRandomize] = newValue;
-		render();
-	}
+	};
 
-	this.spawn = function() {
-		var childCanvases = document.querySelectorAll(".tree");
-		var tree;
-		self.chidren = [];
-		for (var i = 0; i < childCanvases.length; i++) {
-			if (childCanvases[i] === self.canvas) {
-				continue;
-			}
-			tree = new Tree(self, childCanvases[i]);
-			self.chidren.push(tree);
-			tree.randomize();
-		}
-	}
-	
-	function render() {
-		if (!self.treeView) {
-			self.treeView = new TreeView(self);
-		}
-		self.treeView.draw();
-	}
+	this.getAttributes = function() {
+		return Utilities.copyObject(self.attributes);
+	};
 
-	this.randomize();
+	this.initialize();
 };
 
+
 /* Adapted from http://thecodeplayer.com/walkthrough/create-binary-trees-using-javascript-and-html5-canvas?s=rl */
-var TreeView = function(tree) {
-	this.canvas = tree.canvas || document.getElementById("root");
+var TreeView = function(attributes, canvas) {
+	this.canvas = canvas;
 	var ctx = this.canvas.getContext("2d");
 	//Lets resize the canvas to occupy the full page
 	var W = this.canvas.offsetWidth;
@@ -113,6 +112,10 @@ var TreeView = function(tree) {
 	//Some variables
 	var length, divergence, reduction, lineWidth, branchings, start_points = [];
 	
+	this.setAttributes = function(newAttributes) {
+		attributes = newAttributes;
+	}
+
 	this.draw = function() {
 		console.log(tree.attributes);
 
@@ -122,15 +125,15 @@ var TreeView = function(tree) {
 		
 		//Lets draw the trunk of the tree
 		//length of the trunk - 100-150
-		length = tree.attributes.length;
+		length = attributes.length;
 		//angle at which branches will diverge - 10-60
-		divergence = tree.attributes.divergence;
+		divergence = attributes.divergence;
 		//Every branch will be 0.75times of the previous one - 0.5-0.75
-		reduction = tree.attributes.reduction;
+		reduction = attributes.reduction;
 		//width of the branch/trunk
-		lineWidth = tree.attributes.lineWidth;
+		lineWidth = attributes.lineWidth;
 		//number of branchings
-		branchings = tree.attributes.branchings;
+		branchings = attributes.branchings;
 		branchings ? branchings < 0 : 0;
 
 		//This is the end point of the trunk, from where branches will diverge
@@ -207,13 +210,52 @@ var TreeView = function(tree) {
 		var epy = y + length * Math.sin(a * Math.PI/180);
 		return {x: epx, y: epy};
 	}
-
-	this.canvas.addEventListener("click", function() {
-		tree.spawn();		
-	});
 }
 
-var root = new Tree();
+var TreeController = (function() {
+	var trees = new Array(CONSTS.TREE_COUNT);
+	var treeCanvases = document.querySelectorAll(".tree");
+	for(var i = 0; i < treeCanvases.length; i++) {
+		setupListener(i);
+	}
+
+	function setupListener(index) {
+		treeCanvases[i].addEventListener("click", function() {
+			spawnChildren(index);
+		});
+	}
+
+
+	var setupTree = function(index, parent) {
+		if (!trees[index]) {
+			tree = trees[index] =  {};
+			tree.treeModel = new TreeModel(parent);
+			tree.treeView = new TreeView(tree.treeModel.getAttributes(), treeCanvases[index]);
+		} else {
+			tree = trees[index];
+			tree.treeModel.initialize(parent);
+			tree.treeView.setAttributes(tree.treeModel.getAttributes());
+		}
+		tree.treeView.draw();
+		return tree;
+	}
+	var root = setupTree(0);
+
+	var spawnChildren = function(index) {
+		root = trees[index];
+		for (var i = 0; i < trees.length; i++) {
+			if (i === index) {
+				continue;
+			}
+			setupTree(i, root.treeModel);
+		}
+	}
+
+	return {
+
+	}
+})();
+
 
 
 
