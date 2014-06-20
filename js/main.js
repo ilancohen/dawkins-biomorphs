@@ -87,7 +87,6 @@
 			for (var attributeName in ATTRIBUTES) {
 				attributeNamesArray.push(attributeName);
 				self.attributes[attributeName] = parent.attributes[attributeName] || ATTRIBUTES[attributeName].initialValue;
-				console.log("initialize", self.attributes);
 			}
 			self.randomize();
 		};
