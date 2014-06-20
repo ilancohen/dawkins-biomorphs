@@ -303,10 +303,13 @@ textarea {
 	}
 }
 
+h1 {
+	text-align: center;
+}
 #trees {
 	box-sizing: border-box;
-	width: 800px;
-	height: 800px;
+	width: 710px;
+	height: 710px;
 	margin: 0 auto;
 	padding: 20px;
 }

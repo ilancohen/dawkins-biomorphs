@@ -117,7 +117,6 @@
 		};
 
 		this.setAttributes = function(attributes) {
-			console.log("setAttributes", attributes);
 			if (Array.isArray(attributes)) {
 				for (var i = 0; i < attributes.length; i++) {
 					self.attributes[attributeNamesArray[i]] = parseFloat(attributes[i]);
