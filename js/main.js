@@ -296,6 +296,7 @@
 				setupTree(i, root.model);
 			}
 			if (!skipHash) {
+				// Set a flag, so the hash watched doesn't fire.
 				ignoreHash = true;
 				hasher.setHash(attributeHashes.join(","));
 				ignoreHash = false;
