@@ -22,19 +22,6 @@
 
 		copyObject: function(originalObject) {
 			return JSON.parse(JSON.stringify(originalObject));
-		},
-
-		toHash: function(str) {
-			var hash = 0;
-			if (str.length == 0) {
-				return hash;
-			}
-			for (i = 0; i < str.length; i++) {
-				char = str.charCodeAt(i);
-				hash = ((hash<<5)-hash)+char;
-				hash = hash & hash; // Convert to 32bit integer
-			}
-			return hash;
 		}
 	};
 
@@ -145,7 +132,7 @@
 		var length, divergence, reduction, lineWidth, branchings, start_points = [];
 		
 		this.draw = function(attributes) {
-			//filling the canvas white
+			//clearing the canvas
 			ctx.clearRect (0, 0, W, H);
 			
 			//Lets draw the trunk of the tree
@@ -218,12 +205,11 @@
 			}
 			ctx.stroke();
 			start_points = new_start_points;
-			//recursive call - only if length is more than 2.
-			//Else it will fall in an long loop
+			//recursive call
 			if (callNum < branchings) {
-				setTimeout(function(){
+				//setTimeout(function(){
 					branches(callNum+1);
-				}, 50);
+				//}, 50);
 			}
 		}
 		
@@ -253,7 +239,7 @@
 
 	var TreeController = (function() {
 		var root;
-		var trees = new Array(CONSTS.TREE_COUNT);
+		var trees;
 		var treeCanvases = document.querySelectorAll(".tree");
 		var attributeHashes = [];
 		var ignoreHash;
@@ -273,7 +259,8 @@
 				tree.view = new TreeView(treeCanvases[index]);
 				tree.view.onClick(function() {
 					spawnChildren(index);
-				})
+				});
+				tree.index = index;
 			} else {
 				tree = trees[index];
 				tree.model.initialize(parent);
@@ -283,22 +270,30 @@
 			return tree;
 		}
 
-		function spawnChildren(index, skipHash) {
-			root.view.unsetRoot()
-			root = trees[index];
-			root.view.setRoot();
+		function spawnChildren(index) {
+			setRoot(index)
 			for (var i = 0; i < trees.length; i++) {
 				if (i === index) {
 					continue;
 				}
 				setupTree(i, root.model);
 			}
-			if (!skipHash) {
-				// Set a flag, so the hash watched doesn't fire.
-				ignoreHash = true;
-				hasher.setHash(attributeHashes.join(","));
+
+			// Set a flag, so the hash watched doesn't fire.
+			ignoreHash = true;
+			hasher.setHash(index + ":" + attributeHashes.join(","));
+			setTimeout(function(){
 				ignoreHash = false;
+			}, 50);
+		}
+
+		function setRoot(index) {
+			if (root && root.view) {
+				root.view.unsetRoot();
 			}
+			//if (trees[index] && trees[index].view) 
+			root = trees[index];
+			root.view.setRoot();
 		}
 
 		// function to read the hash value and use it as the tree attributes.
@@ -306,7 +301,9 @@
 			if (ignoreHash || hash === "") {
 				return;
 			}
-			var attributeSets = hash.split(",");
+			var split = hash.split(":");
+			setRoot(split[0]);
+			var attributeSets = split[1].split(",");
 			trees.forEach(function(tree, index) {
 				tree.model.setAttributes(attributeSets[index].split("_"))
 				tree.view.draw(tree.model.getAttributes())
@@ -314,13 +311,22 @@
 		}
 
 		function init() {
-			root = setupTree(0);
-			spawnChildren(0, true);
+			setup();
 
 			hasher.initialized.add(readHash); //add initialized listener (to grab initial value in case it is already set)
 			hasher.changed.add(readHash);
 			hasher.init(); //initialize hasher (start listening for history changes)
 		}
+
+		function setup() {
+			trees = new Array(CONSTS.TREE_COUNT);
+			root = setupTree(0);
+			spawnChildren(0);
+		}
+
+		document.getElementById("reset").addEventListener("click", function() {
+			setup();
+		});
 
 		return {
 			init: init
