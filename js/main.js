@@ -207,9 +207,10 @@
 			start_points = new_start_points;
 			//recursive call
 			if (callNum < branchings) {
-				//setTimeout(function(){
+				// Using timeout to see the tree growing.
+				setTimeout(function(){
 					branches(callNum+1);
-				//}, 50);
+				}, 50);
 			}
 		}
 		
