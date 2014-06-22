@@ -303,7 +303,7 @@
 
 		// function to read the hash value and use it as the tree attributes.
 		function readHash(hash) {
-			if (ignoreHash) {
+			if (ignoreHash || hash === "") {
 				return;
 			}
 			var attributeSets = hash.split(",");
